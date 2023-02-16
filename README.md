@@ -43,7 +43,7 @@ And somewhere in your template you could:
 ## tweenedSequence Args
 `tweenedSequence(sequence, options)`
 
-### sequence
+### **sequence**
 A `tweenedSequence` accepts objects or arrays.
 
 **Named Sequence (objects)**
@@ -95,6 +95,16 @@ const indexedSequence_object = [
   // ...
 ]
 ```
+
+### **options**
+Similar to regular tweened stores, the `tweenedSequence` options accept the following optional properties:
+```js
+const options = {
+  duration: 400, // number, ms
+  delay: 0, // number, ms
+  easing: linear, // any easing fn from svelte/easing
+  initialStep: 0, // the initial step of your sequence (name or index)
+} 
 
 ## Roadmap
 - Better type support
