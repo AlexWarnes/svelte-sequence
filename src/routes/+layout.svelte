@@ -1,6 +1,7 @@
 <nav>
 	<a href="/named">Named</a>
 	<a href="/indexed">Indexed</a>
+	<a href="/time">Time</a>
 </nav>
 
 <main>
@@ -27,6 +28,5 @@
   main {
     padding: 3rem 1rem 1rem;
     background-color: #fafbfc;
-    color: white;
   }
 </style>

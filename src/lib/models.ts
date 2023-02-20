@@ -1,4 +1,5 @@
 import type { Readable } from 'svelte/store';
+export type TimeUnit = 'ms' | 'seconds' | 'minutes' | 'hours' | 'days' | 'weeks';
 
 export type SequenceType = 'NAMED' | 'INDEXED';
 // export type TweenedValue =
@@ -29,6 +30,12 @@ export interface TweenedSequenceOptions {
 	initialStep?: number | string;
 }
 
+export interface Lap {
+	lapNumber: number,
+	lapTime: number,
+	totalTime: number,
+	delta: number
+}
 // FOR INTERNAL TESTING - DO NOT EXPORT TO PACKAGE
 export type v2 = {
 	x: number;
