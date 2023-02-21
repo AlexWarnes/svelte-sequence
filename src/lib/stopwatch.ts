@@ -1,26 +1,35 @@
-import { derived, get, writable } from 'svelte/store';
+import { get, writable } from 'svelte/store';
 import type { Lap } from './models';
 
 function createStopwatch(startAt: number) {
-	const stopwatchStore = writable(startAt);
-	const { subscribe, set, update } = stopwatchStore;
+	let intervalID: ReturnType<typeof setInterval> | null;
+	const clear = () => {
+		if (intervalID) {
+			clearInterval(intervalID);
+			intervalID = null;
+		}
+	} 
+
 	const originalTime = startAt;
-	let intervalID: ReturnType<typeof setInterval>;
+	const stopwatchStore = writable(startAt, () => () => {
+		if (intervalID) clear();
+	});
+	const { subscribe, set, update } = stopwatchStore;
 	const laps = writable<Lap[]>([]);
 	return {
 		subscribe,
 		start: () => {
-			if (intervalID) clearInterval(intervalID);
+			if (intervalID) return;
 
 			intervalID = setInterval(() => {
 				update((currentTime) => currentTime + 10);
 			}, 10);
 		},
 		pause: () => {
-			if (intervalID) clearInterval(intervalID);
+			if (intervalID) clear();
 		},
 		reset: () => {
-			if (intervalID) clearInterval(intervalID);
+			if (intervalID) clear();
 			set(originalTime);
 			laps.set([]);
 		},

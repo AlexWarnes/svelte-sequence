@@ -6,8 +6,8 @@
 
 	const sw = stopwatch();
 	const laps = sw.laps;
-	const sTimer = timer(15, 'seconds');
-	const customTimer = timer(1, 'days');
+	const sTimer = timer(15, 's');
+	const customTimer = timer(1, 'd');
 </script>
 
 <h1>TIME STORES</h1>
@@ -43,6 +43,7 @@
 <p class="tab">{getHours($customTimer)} hours</p>
 <p class="tab">{getMinutes($customTimer)} minutes</p>
 <p class="tab">{getSeconds($customTimer)} seconds</p>
+<h3>{`formatTime()`}</h3>
 {#each formatTime($customTimer, true) as t}
 	<span class="tab" style="display: inline-block; width: 3rem;">{t.time}{t.shortUnit}</span>
 {/each}

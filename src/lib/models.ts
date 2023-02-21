@@ -1,5 +1,5 @@
 import type { Readable } from 'svelte/store';
-export type TimeUnit = 'ms' | 'seconds' | 'minutes' | 'hours' | 'days' | 'weeks';
+export type TimeUnit = 'ms' | 's' | 'm' | 'h' | 'd' | 'w';
 
 export type SequenceType = 'NAMED' | 'INDEXED';
 // export type TweenedValue =

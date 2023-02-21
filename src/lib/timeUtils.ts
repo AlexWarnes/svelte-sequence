@@ -59,15 +59,15 @@ export function convertTimeAndUnitToMS(t: number, u: TimeUnit){
   switch(u){
     case "ms":
       return t;
-    case 'seconds':
+    case 's':
       return t * 1000;
-    case 'minutes':
+    case 'm':
       return t * minMS;
-    case 'hours':
+    case 'h':
       return t * hourMS;
-    case 'days':
+    case 'd':
       return t * dayMS;
-    case 'weeks':
+    case 'w':
       return t * weekMS;
     default:
       console.warn("Unrecognized unit in timer:", u);
