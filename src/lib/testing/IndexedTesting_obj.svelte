@@ -26,6 +26,7 @@
 	<div class="dot" style:left="{$positionSequence['x']}px" style:top="{$positionSequence['y']}px" />
 </div>
 
+<button on:click={() => positionSequence.previousStep()}>Previous</button>
 <button on:click={() => positionSequence.setStep(0)}>0</button>
 
 <button on:click={() => positionSequence.setStep(1)}>1</button>
@@ -35,6 +36,7 @@
 <button on:click={() => positionSequence.setStep(3)}>3</button>
 
 <button on:click={() => positionSequence.setStep(4)}>4</button>
+<button on:click={() => positionSequence.nextStep()}>Next</button>
 <label
 	>Partial Step:
 	<input type="range" step="0.01" min="0" max={positionList.length - 1} bind:value={step} />

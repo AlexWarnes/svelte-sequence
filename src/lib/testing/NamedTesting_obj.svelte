@@ -44,9 +44,11 @@
 	<div class="dot" style:left="{$positionSequence['x']}px" style:top="{$positionSequence['y']}px" />
 </div>
 
+<button on:click={() => positionSequence.previousStep()}>Previous</button>
 {#each buttons as b}
 	<button on:click={() => positionSequence.setStep(b)}>{b}</button>
 {/each}
+<button on:click={() => positionSequence.nextStep()}>Next</button>
 
 <style>
 	.wrapper {

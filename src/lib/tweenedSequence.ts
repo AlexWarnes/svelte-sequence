@@ -9,7 +9,7 @@ import type {
 	TweenedSequenceOptions,
 } from './models';
 import { derived, readable, writable } from 'svelte/store';
-// import { get } from 'svelte/store';
+import { get } from 'svelte/store';
 
 function calculateNextValueFromFract<T>(
 	a: T,
@@ -61,12 +61,50 @@ function createSequence<T>(
 		options.initialStep ?? (getInitialStepKeyFromSequence(sequence, seqType) as number | string);
 	// TODO
 	// @ts-ignore
-	const { subscribe, set } = tweened<T>(sequence[initialStep], { duration, easing, delay });
+	const { subscribe, set, update } = tweened<T>(sequence[initialStep], { duration, easing, delay });
 	let previousStep: number | string = initialStep;
 	const fract = (num: number) => num % 1.0;
 
 	return {
 		subscribe,
+		nextStep: () => {
+				let actualNext: string | number;
+				if (seqType === "INDEXED"){
+					let baseNext = Math.floor((previousStep as number) + 1);
+					// For sequence array, if next idx is too high, use 0
+					actualNext = baseNext > (sequence.length as number) - 1 ? 0 : baseNext;
+				} else {
+					const keys = Object.keys(sequence);
+					const currentIdx = keys.indexOf((previousStep as string));
+					const baseNextKeyIdx = currentIdx + 1;
+					// for named obj, if 
+					actualNext = keys[baseNextKeyIdx] ?? keys[0];
+				}
+				console.log("nextStep:", {actualNext})
+				previousStep = actualNext;
+				// TODO
+				// @ts-ignore
+				set(sequence[actualNext])
+		},
+		previousStep: () => {
+			let actualPrev: string | number;
+			if (seqType === "INDEXED"){
+				let basePrev = Math.ceil((previousStep as number) - 1);
+				// For sequence array, if next idx is too high, use 0
+				actualPrev = basePrev < 0 ? (sequence.length as number) - 1 : basePrev;
+			} else {
+				const keys = Object.keys(sequence);
+				const currentIdx = keys.indexOf((previousStep as string));
+				const basePrevKeyIdx = currentIdx - 1;
+				// for named obj, if 
+				actualPrev = keys[basePrevKeyIdx] ?? keys[keys.length - 1];
+			}
+			console.log("previousStep:", {actualPrev})
+			previousStep = actualPrev;
+			// TODO
+			// @ts-ignore
+			set(sequence[actualPrev])
+		},
 		setStep: (step: number | string) => {
 			if (seqType === 'NAMED' && !(sequence as NamedSequence<T>).hasOwnProperty(step)) {
 				return;
@@ -117,6 +155,7 @@ function createSequence<T>(
 			}
 
 			if (seqType === 'NAMED') {
+				previousStep = step;
 				// TODO
 				// @ts-ignore
 				set(sequence[step] ?? sequence[initialStep], {
