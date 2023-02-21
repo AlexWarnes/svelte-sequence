@@ -1,5 +1,11 @@
 # svelte-sequence
 
+## 0.2.0
+
+### Minor Changes
+
+- 2b0dde8: add previousStep() and nextStep() methods, fix time store memory leaks
+
 ## 0.1.0
 
 ### Minor Changes
