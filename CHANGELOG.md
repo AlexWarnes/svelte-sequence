@@ -1,5 +1,11 @@
 # svelte-sequence
 
+## 0.3.0
+
+### Minor Changes
+
+- 428a7ac: Add updateSequence method, marginally improve types
+
 ## 0.2.0
 
 ### Minor Changes
