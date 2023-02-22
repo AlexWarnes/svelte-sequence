@@ -37,6 +37,15 @@
 		duration: 1000,
 		easing: quintOut
 	});
+
+
+	let x1 = 250;
+	let y1 = 10;
+
+	$: positionSequence.updateSequence((current) => {
+		current.Step_One = { x: x1, y: y1 };
+		return current;
+	});
 </script>
 
 <div class="wrapper">
@@ -48,6 +57,14 @@
 	<button on:click={() => positionSequence.setStep(b)}>{b}</button>
 {/each}
 <button on:click={() => positionSequence.nextStep()}>Next</button>
+<label
+	>x1 {x1}
+	<input type="number" bind:value={x1} />
+</label>
+<label
+	>y1 {y1}
+	<input type="number" bind:value={y1} />
+</label>
 
 <style>
 	.wrapper {
@@ -64,4 +81,8 @@
 		background-color: salmon;
 		position: absolute;
 	}
+
+  label {
+    display: block;
+  }
 </style>

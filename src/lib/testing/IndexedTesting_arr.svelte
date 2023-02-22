@@ -1,5 +1,4 @@
 <script lang="ts">
-	import type { IndexedTweenedSequence, } from '$lib/models';
 	import { tweenedSequence } from '$lib/tweenedSequence';
 	import { elasticOut } from 'svelte/easing';
 	import { tweened } from 'svelte/motion';

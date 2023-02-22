@@ -2,17 +2,14 @@ import { tweened } from 'svelte/motion';
 import { linear } from 'svelte/easing';
 import type {
 	IndexedSequence,
-	IndexedTweenedSequence,
+	// IndexedTweenedSequence,
 	NamedSequence,
-	NamedTweenedSequence,
+	// NamedTweenedSequence,
 	Sequence,
 	SequenceType,
 	TweenedSequence,
-	// TweenedSequence,
 	TweenedSequenceOptions
 } from './models';
-import { derived, readable, writable } from 'svelte/store';
-import { get } from 'svelte/store';
 
 function calculateNextValueFromFract<T>(a: T, b: T, factor: number): T {
 	if (typeof a === 'number' && typeof b === 'number') {
@@ -44,9 +41,10 @@ function calculateNextValueFromFract<T>(a: T, b: T, factor: number): T {
 }
 
 function createIndexedSequence<T>(
-	sequence: IndexedSequence<T>,
+	_sequence: IndexedSequence<T>,
 	options: TweenedSequenceOptions
 ): TweenedSequence<T> {
+	let sequence = _sequence;
 	const seqType: SequenceType = 'INDEXED';
 	const duration = options.duration ?? 1000;
 	const easing = options.easing ?? linear;
@@ -68,6 +66,44 @@ function createIndexedSequence<T>(
 	// lil fractional helper
 	const fract = (num: number) => num % 1.0;
 
+	const setStep = (step: string | number) => {
+		if (typeof step !== 'number') {
+			console.error(
+				`Step "${step}" is not assignable to an indexed tweenedSequence store. "${step}" is not a number.`
+			);
+			return;
+		}
+
+		// NOTE: Ignore invalid steps (alternative would be to round, but seems weird)
+		if (step > sequence.length - 1 || step < 0) {
+			return;
+		}
+
+		let nextDuration;
+		let nextDelay;
+
+		let partial = fract(step);
+		const previousValue: T = sequence[Math.floor(step)] ?? sequence[0];
+		const nextValue: T = sequence[Math.ceil(step)] ?? sequence[1];
+		const nextFactor = easing(partial);
+		const stepDiff = Math.abs(previousStep - step);
+		nextDuration = stepDiff * duration < duration ? stepDiff * duration : duration;
+		// TODO: consider delay behavior (when to apply, when not to)
+		// maybe as arg to setStep so user can decide?
+		nextDelay = stepDiff * delay < delay ? stepDiff * delay : delay;
+		const nextVal: T = calculateNextValueFromFract<T>(
+			previousValue, // from
+			nextValue, // to
+			nextFactor
+		);
+		previousStep = step;
+		set(nextVal, {
+			duration: nextDuration ?? duration,
+			delay: nextDelay ?? delay,
+			easing
+		});
+	};
+
 	return {
 		subscribe,
 		nextStep: () => {
@@ -84,49 +120,18 @@ function createIndexedSequence<T>(
 			previousStep = actualPrev;
 			set(sequence[actualPrev]);
 		},
-		setStep: (step: string | number) => {
-			if (typeof step !== 'number') {
-				console.error(
-					`Step "${step}" is not assignable to an indexed tweenedSequence store. "${step}" is not a number.`
-				);
-				return;
-			}
-
-			// NOTE: Ignore invalid steps (alternative would be to round, but seems weird)
-			if (step > sequence.length - 1 || step < 0) {
-				return;
-			}
-
-			let nextDuration;
-			let nextDelay;
-
-			let partial = fract(step);
-			const previousValue: T = sequence[Math.floor(step)] ?? sequence[0];
-			const nextValue: T = sequence[Math.ceil(step)] ?? sequence[1];
-			const nextFactor = easing(partial);
-			const stepDiff = Math.abs(previousStep - step);
-			nextDuration = stepDiff * duration < duration ? stepDiff * duration : duration;
-			// TODO: consider delay behavior (when to apply, when not to)
-			// maybe as arg to setStep so user can decide?
-			nextDelay = stepDiff * delay < delay ? stepDiff * delay : delay;
-			const nextVal: T = calculateNextValueFromFract<T>(
-				previousValue, // from
-				nextValue, // to
-				nextFactor
-			);
-			previousStep = step;
-			set(nextVal, {
-				duration: nextDuration ?? duration,
-				delay: nextDelay ?? delay,
-				easing
-			});
+		setStep,
+		updateSequence: (fn) => {
+			sequence = fn(sequence) as IndexedSequence<T>;
+			setStep(previousStep)
 		}
 	};
 }
 function createNamedSequence<T>(
-	sequence: NamedSequence<T>,
+	_sequence: NamedSequence<T>,
 	options: TweenedSequenceOptions
 ): TweenedSequence<T> {
+	let sequence = _sequence;
 	const seqType: SequenceType = 'NAMED';
 	const duration = options.duration ?? 1000;
 	const easing = options.easing ?? linear;
@@ -145,6 +150,18 @@ function createNamedSequence<T>(
 	const { subscribe, set, update } = tweened<T>(sequence[initialStep], { duration, easing, delay });
 	let previousStep: string = initialStep;
 
+	function setStep(step: string | number) {
+		if (typeof step === 'number' || !sequence.hasOwnProperty(step)) {
+			return;
+		}
+
+		previousStep = step;
+		set(sequence[step] ?? sequence[initialStep], {
+			duration,
+			delay,
+			easing
+		});
+	}
 	return {
 		subscribe,
 		nextStep: () => {
@@ -163,17 +180,10 @@ function createNamedSequence<T>(
 			previousStep = actualPrev;
 			set(sequence[actualPrev]);
 		},
-		setStep: (step: string | number) => {
-			if (typeof step === 'number' || !sequence.hasOwnProperty(step)) {
-				return;
-			}
-
-			previousStep = step;
-			set(sequence[step] ?? sequence[initialStep], {
-				duration,
-				delay,
-				easing
-			});
+		setStep,
+		updateSequence: (fn) => {
+			sequence = fn(sequence) as NamedSequence<T>;
+			setStep(previousStep);
 		}
 	};
 }
