@@ -17,12 +17,29 @@ export type IndexedSequence<T> = T[];
 
 export type Sequence<T> = NamedSequence<T> | IndexedSequence<T>;
 
-export interface TweenedSequence<T> extends Readable<T> {
-	setStep: (step: number | string) => void;
-	nextStep: () => void;
-	previousStep: () => void;
+export interface IndexedTweenedSequence<T> extends Readable<T> {
+	// setStep: (step: number) => void;
+	// nextStep: () => void;
+	// previousStep: () => void;
 	// step: Readable<string | number>;
 	// step: string | number;
+}
+
+// type NameOrId<T extends number | string> = T extends number
+//   ? IdLabel
+//   : NameLabel;
+export interface NamedTweenedSequence<T> extends Readable<T> {
+	// setStep: (step: string) => void;
+	// nextStep: () => void;
+	// previousStep: () => void;
+	// step: Readable<string | number>;
+	// step: string | number;
+}
+
+export interface TweenedSequence<T> extends Readable<T> {
+		setStep: (step: string | number) => void;
+		nextStep: () => void;
+		previousStep: () => void;	
 }
 
 export interface TweenedSequenceOptions {

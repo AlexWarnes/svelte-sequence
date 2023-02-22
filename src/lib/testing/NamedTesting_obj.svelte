@@ -15,7 +15,6 @@
 	// }
 
 	// Temporary "solution" is to use type
-
 	type NamedPositionList = {
 		Step_One: v2;
 		Step_Two: v2;

@@ -2,23 +2,22 @@ import { tweened } from 'svelte/motion';
 import { linear } from 'svelte/easing';
 import type {
 	IndexedSequence,
+	IndexedTweenedSequence,
 	NamedSequence,
+	NamedTweenedSequence,
 	Sequence,
 	SequenceType,
 	TweenedSequence,
-	TweenedSequenceOptions,
+	// TweenedSequence,
+	TweenedSequenceOptions
 } from './models';
 import { derived, readable, writable } from 'svelte/store';
 import { get } from 'svelte/store';
 
-function calculateNextValueFromFract<T>(
-	a: T,
-	b: T,
-	factor: number
-): T | undefined {
+function calculateNextValueFromFract<T>(a: T, b: T, factor: number): T {
 	if (typeof a === 'number' && typeof b === 'number') {
 		// handle numbers
-		return (b - a) * factor + a as T;
+		return ((b - a) * factor + a) as T;
 	}
 
 	if (Array.isArray(a) && Array.isArray(b)) {
@@ -30,145 +29,161 @@ function calculateNextValueFromFract<T>(
 		return temp as T;
 	}
 
-  if (!!a && !!b && typeof a === "object" && typeof b === "object"){
-    // handle objects (like Vector3)
-    const temp = {};
-    Object.keys(a).forEach((k) => {
-      // TODO
-      // @ts-ignore
-      temp[k] = ((b[k] as number) - (a[k] as number)) * factor + (a[k] as number);
-    })
-    return temp as T;
-  }
-}
-
-function getInitialStepKeyFromSequence<T>(sequence: Sequence<T>, seqType: SequenceType): string | number {
-	if (seqType === 'NAMED') {
-		return Object.keys(sequence)[0];
+	if (!!a && !!b && typeof a === 'object' && typeof b === 'object') {
+		// handle objects (like Vector3)
+		const temp = {};
+		Object.keys(a).forEach((k) => {
+			// TODO
+			// @ts-ignore
+			temp[k] = ((b[k] as number) - (a[k] as number)) * factor + (a[k] as number);
+		});
+		return temp as T;
 	}
 
-	return 0;
+	return b;
 }
-function createSequence<T>(
-	sequence: Sequence<T>,
+
+function createIndexedSequence<T>(
+	sequence: IndexedSequence<T>,
 	options: TweenedSequenceOptions
 ): TweenedSequence<T> {
-	const seqType: SequenceType = Array.isArray(sequence) ? 'INDEXED' : 'NAMED';
+	const seqType: SequenceType = 'INDEXED';
 	const duration = options.duration ?? 1000;
 	const easing = options.easing ?? linear;
 	const delay = options.delay ?? 0;
-	const initialStep =
-		options.initialStep ?? (getInitialStepKeyFromSequence(sequence, seqType) as number | string);
-	// TODO
-	// @ts-ignore
+	const initialStep = (options.initialStep as number) ?? 0;
+
+	// Validate initial step
+	if (sequence[initialStep] === null || sequence[initialStep] === undefined) {
+		console.error(
+			`Step "${initialStep}" is an invalid initialStep for your sequence of length ${
+				sequence.length
+			}. A valid step satisfies: 0 <= step <= ${sequence.length - 1}`
+		);
+	}
+
 	const { subscribe, set, update } = tweened<T>(sequence[initialStep], { duration, easing, delay });
-	let previousStep: number | string = initialStep;
+	let previousStep: number = initialStep;
+
+	// lil fractional helper
 	const fract = (num: number) => num % 1.0;
 
 	return {
 		subscribe,
 		nextStep: () => {
-				let actualNext: string | number;
-				if (seqType === "INDEXED"){
-					let baseNext = Math.floor((previousStep as number) + 1);
-					// For sequence array, if next idx is too high, use 0
-					actualNext = baseNext > (sequence.length as number) - 1 ? 0 : baseNext;
-				} else {
-					const keys = Object.keys(sequence);
-					const currentIdx = keys.indexOf((previousStep as string));
-					const baseNextKeyIdx = currentIdx + 1;
-					// for named obj, if 
-					actualNext = keys[baseNextKeyIdx] ?? keys[0];
-				}
-				console.log("nextStep:", {actualNext})
-				previousStep = actualNext;
-				// TODO
-				// @ts-ignore
-				set(sequence[actualNext])
+			const baseNext = Math.floor(previousStep + 1);
+			// For sequence array, if next idx is too high, use 0
+			const actualNext = baseNext > sequence.length - 1 ? 0 : baseNext;
+			previousStep = actualNext;
+			set(sequence[actualNext]);
 		},
 		previousStep: () => {
-			let actualPrev: string | number;
-			if (seqType === "INDEXED"){
-				let basePrev = Math.ceil((previousStep as number) - 1);
-				// For sequence array, if next idx is too high, use 0
-				actualPrev = basePrev < 0 ? (sequence.length as number) - 1 : basePrev;
-			} else {
-				const keys = Object.keys(sequence);
-				const currentIdx = keys.indexOf((previousStep as string));
-				const basePrevKeyIdx = currentIdx - 1;
-				// for named obj, if 
-				actualPrev = keys[basePrevKeyIdx] ?? keys[keys.length - 1];
-			}
-			console.log("previousStep:", {actualPrev})
+			const basePrev = Math.ceil(previousStep - 1);
+			// For sequence array, if next idx is too high, use 0
+			const actualPrev = basePrev < 0 ? sequence.length - 1 : basePrev;
 			previousStep = actualPrev;
-			// TODO
-			// @ts-ignore
-			set(sequence[actualPrev])
+			set(sequence[actualPrev]);
 		},
-		setStep: (step: number | string) => {
-			if (seqType === 'NAMED' && !(sequence as NamedSequence<T>).hasOwnProperty(step)) {
+		setStep: (step: string | number) => {
+			if (typeof step !== 'number') {
+				console.error(
+					`Step "${step}" is not assignable to an indexed tweenedSequence store. "${step}" is not a number.`
+				);
 				return;
 			}
 
-			if (seqType === 'INDEXED') {
-				if (typeof step !== 'number') {
-					console.error(
-						`Step "${step}" is not assignable to an indexed tweenedSequence store. "${step}" is not a number.`
-					);
-					return;
-				}
-
-				if (step > (sequence as IndexedSequence<T>).length - 1 || step < 0) {
-					return;
-				}
+			// NOTE: Ignore invalid steps (alternative would be to round, but seems weird)
+			if (step > sequence.length - 1 || step < 0) {
+				return;
 			}
 
 			let nextDuration;
 			let nextDelay;
 
-			if (seqType === 'INDEXED' && typeof step === 'number') {
-				let partial = fract(step);
-				// TODO
-				// @ts-ignore
-				const previous: number = sequence[Math.floor(step)] ?? sequence[0];
-				// TODO
-				// @ts-ignore
-				const next: number = sequence[Math.ceil(step)] ?? sequence[1];
-				const nextFactor = easing(partial);
-				const stepDiff = Math.abs((previousStep as number) - step);
-				nextDuration = stepDiff * duration < duration ? stepDiff * duration : duration;
-				// TODO: consider delay behavior (when to apply, when not to)
-				// maybe as arg to setStep so user can decide?
-				nextDelay = stepDiff * delay < delay ? stepDiff * delay : delay;
-				const nextVal = calculateNextValueFromFract<T>(
-					previous as T, // from
-					next as T, // to
-					nextFactor
-				);
-				previousStep = step;
-				set(nextVal as T, {
-					duration: nextDuration ?? duration,
-					delay: nextDelay ?? delay,
-					easing
-				});
+			let partial = fract(step);
+			const previousValue: T = sequence[Math.floor(step)] ?? sequence[0];
+			const nextValue: T = sequence[Math.ceil(step)] ?? sequence[1];
+			const nextFactor = easing(partial);
+			const stepDiff = Math.abs(previousStep - step);
+			nextDuration = stepDiff * duration < duration ? stepDiff * duration : duration;
+			// TODO: consider delay behavior (when to apply, when not to)
+			// maybe as arg to setStep so user can decide?
+			nextDelay = stepDiff * delay < delay ? stepDiff * delay : delay;
+			const nextVal: T = calculateNextValueFromFract<T>(
+				previousValue, // from
+				nextValue, // to
+				nextFactor
+			);
+			previousStep = step;
+			set(nextVal, {
+				duration: nextDuration ?? duration,
+				delay: nextDelay ?? delay,
+				easing
+			});
+		}
+	};
+}
+function createNamedSequence<T>(
+	sequence: NamedSequence<T>,
+	options: TweenedSequenceOptions
+): TweenedSequence<T> {
+	const seqType: SequenceType = 'NAMED';
+	const duration = options.duration ?? 1000;
+	const easing = options.easing ?? linear;
+	const delay = options.delay ?? 0;
+	const initialStep = (options.initialStep as string) ?? Object.keys(sequence)[0];
+
+	// Validate initial step
+	if (sequence[initialStep] === null || sequence[initialStep] === undefined) {
+		console.error(
+			`Step "${initialStep}" is an invalid initialStep for your named sequence. A valid step will match one of your sequence keys: ${Object.keys(
+				sequence
+			).join(', ')}`
+		);
+	}
+
+	const { subscribe, set, update } = tweened<T>(sequence[initialStep], { duration, easing, delay });
+	let previousStep: string = initialStep;
+
+	return {
+		subscribe,
+		nextStep: () => {
+			const keys = Object.keys(sequence);
+			const currentIdx = keys.indexOf(previousStep);
+			const baseNextKeyIdx = currentIdx + 1;
+			const actualNext = keys[baseNextKeyIdx] ?? keys[0];
+			previousStep = actualNext;
+			set(sequence[actualNext]);
+		},
+		previousStep: () => {
+			const keys = Object.keys(sequence);
+			const currentIdx = keys.indexOf(previousStep as string);
+			const basePrevKeyIdx = currentIdx - 1;
+			const actualPrev = keys[basePrevKeyIdx] ?? keys[keys.length - 1];
+			previousStep = actualPrev;
+			set(sequence[actualPrev]);
+		},
+		setStep: (step: string | number) => {
+			if (typeof step === 'number' || !sequence.hasOwnProperty(step)) {
 				return;
 			}
 
-			if (seqType === 'NAMED') {
-				previousStep = step;
-				// TODO
-				// @ts-ignore
-				set(sequence[step] ?? sequence[initialStep], {
-					duration: nextDuration ?? duration,
-					delay: nextDelay ?? delay,
-					easing
-				});
-			}
+			previousStep = step;
+			set(sequence[step] ?? sequence[initialStep], {
+				duration,
+				delay,
+				easing
+			});
 		}
 	};
 }
 
-// TODO: Optional type arg for named keys
 export function tweenedSequence<T>(sequence: Sequence<T>, options: TweenedSequenceOptions = {}) {
-	return createSequence<T>(sequence, options);
+	const seqType: SequenceType = Array.isArray(sequence) ? 'INDEXED' : 'NAMED';
+	if (seqType === 'INDEXED') {
+		return createIndexedSequence<T>(sequence as IndexedSequence<T>, options);
+	} else {
+		// (seqType === 'NAMED')
+		return createNamedSequence<T>(sequence as NamedSequence<T>, options);
+	}
 }
