@@ -11,14 +11,22 @@ Custom stores to compose tweened motion sequences over multiple steps.
 
 Example on StackBlitz: https://stackblitz.com/edit/example-svelte-sequence
 
-## `tweenedSequence`
+# tweenedSequence
 
-**methods:**
+**Methods:**
 
 - `setStep(step)`
 - `updateSequence((currentSequence) => newSequence)`
+- `nextStep()`
+- `previousStep()`
 
-**Usage**
+**Stores:**
+- `value: Tweened<T>`
+- `step: Writable<string | number>`
+
+
+## **Usage**
+
 Imagine you have an object on screen. You want this object to move to specific points as a user clicks through some awesome tutorial you made. Your tutorial has four steps.
 
 1. Create a `tweenedSequence` store. Provide it with your sequence of values at each step:
@@ -43,19 +51,20 @@ myPosition.setStep('step_two');
 
 And somewhere in your template you could:
 
-```html
+```svelte
 <div class="dot" style:left="{$myPosition['x']}px" style:top="{$myPosition['y']}px" />
 ```
 
-### tweenedSequence Args
+## **tweenedSequence Args**
 
 `tweenedSequence(sequence, options)`
 
-#### **sequence**
+### **sequence**
 
 A `tweenedSequence` accepts a sequence as objects or arrays.
 
 **Named Sequence (objects)**
+
 Each key in your named sequence corresponds to a step. You can call `setStep(name)` for any key in the provided sequence.
 
 If you call `setStep()` with a name that is not present in a sequence, nothing will happen. This allows for flexible step coordination between objects without errors getting thrown or unwanted movement.
@@ -83,9 +92,12 @@ const namedSequence_object = {
 ```
 
 **Indexed Sequence (arrays)**
+
 Each index in your indexed sequence corresponds to a step. You can call `setStep(index)` for any index in the provided sequence.
 
-If you call `setStep()` with a fractional value that exists in the sequence, you'll receive the value at that point in the tween based on your provided easing. This allows for "scrubbing" through your motion.
+If you call `setStep()` with a fractional value that exists in the sequence, you'll receive the value at that fractional point in the tween based on your provided easing. This allows for "scrubbing" through your motion.
+
+For example, `setStep(1.5)` will emit the value halfway between index 1 and index 2 in the sequence you provided.
 
 Indexed Sequence _values_ can be anything a regular tweened store accepts (number, array, object). The values must be the same "shape" across steps.
 
@@ -105,20 +117,37 @@ const indexedSequence_object = [
 ];
 ```
 
-#### **options**
+**Step Binding**
+
+You can also bind directly to `step` which is returned from `tweenedSequence`. Combine this with a range slider for easy scrubbing:
+
+```js
+const myPosition = tweenedSequence(indexedSequence_array);
+const { step } = myPosition;
+```
+
+And in your template:
+
+```svelte
+<label>Scrubber: {$step.toFixed(2)}
+	<input type="range" bind:value={$step} step="0.01" min="0" max={indexedSequence_array - 1} />
+</label>
+```
+
+### **options**
 
 Similar to regular tweened stores, the `tweenedSequence` options accept the following optional properties:
 
 ```js
 const options = {
 	duration: 400, // number, ms
-	delay: 0, // number, ms
 	easing: linear, // any easing fn from svelte/easing
+	delay: 0, // number, ms
 	initialStep: 0 // the initial step of your sequence (name or index)
 };
 ```
 
-### **updateSequence()**
+## **updateSequence()**
 
 If your sequence changes for some reason, you may need to update parts of it.
 
@@ -136,11 +165,11 @@ function handleClick(event) {
 
 And voila! Your sequence is updated and your call to `setStep(2)` will tween to your new tuple position. This works for any sequence type or value type, as long as the returned sequence is the same shape as the original.
 
-## Stopwatch
+# stopwatch
 
 A stopwatch store that emits time elapsed in ms.
 
-**method:**
+**Methods:**
 
 - `start()`
 - `pause()`
@@ -167,12 +196,12 @@ firstStopwatch.reset();
 firstStopwatch.addLap();
 ```
 
-Read the laps as needed:
+Extract and read the laps as needed:
 
 ```svelte
 <script>
 //...
-const laps = firstStopwatch.laps;
+const { laps } = firstStopwatch;
 
 </script>
 
@@ -259,6 +288,8 @@ function formatTime(t: number, includeZero: boolean = false) {
 
 ```ts
 interface TweenedSequence<T> extends Readable<T> {
+	value: Tweened<T>,
+	step: Writable<string | number>;
 	setStep: (step: string | number) => void;
 	nextStep: () => void;
 	previousStep: () => void;

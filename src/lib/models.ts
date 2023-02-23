@@ -1,4 +1,5 @@
-import type { Readable } from 'svelte/store';
+import type { Tweened } from 'svelte/motion';
+import type { Readable, Writable } from 'svelte/store';
 export type TimeUnit = 'ms' | 's' | 'm' | 'h' | 'd' | 'w';
 
 export type SequenceType = 'NAMED' | 'INDEXED';
@@ -42,6 +43,8 @@ export interface TweenedSequence<T> extends Readable<T> {
 		setStep: (step: string | number) => void;
 		nextStep: () => void;
 		previousStep: () => void;
+		value: Tweened<T>,
+		step: Writable<string | number>;
 		// TODO: figure out how to type this update fn.
 		/**
 		 * 
@@ -69,8 +72,22 @@ export interface Lap {
 	totalTime: number,
 	delta: number
 }
-// FOR INTERNAL TESTING - DO NOT EXPORT TO PACKAGE
-export type v2 = {
+
+// FOR INTERNAL USE - DO NOT EXPORT TO PACKAGE
+export type Vector2 = {
 	x: number;
 	y: number;
+	clone: () => void;
+	setX: (n: number) => void;
+	setY: (n: number) => void;
+	setZ: (n: number) => void;
+};
+export type Vector3 = {
+	x: number;
+	y: number;
+	z: number;
+	clone: () => Vector3;
+	setX: (n: number) => Vector3;
+	setY: (n: number) => Vector3;
+	setZ: (n: number) => Vector3;
 };

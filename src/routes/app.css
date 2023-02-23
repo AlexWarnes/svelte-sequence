@@ -1,0 +1,46 @@
+body {
+	font-family: sans-serif;
+}
+* {
+	box-sizing: border-box;
+}
+section {
+	margin: 1rem auto;
+}
+button {
+	background-color: #232323;
+	color: #eee;
+	padding: 0.5rem 0.75rem;
+	border-radius: 0.25rem;
+	border: none;
+}
+button:hover {
+	cursor: pointer;
+	color: #fff;
+}
+
+button.active {
+	background-color: seagreen;
+}
+
+.control-box {
+	margin: 0.5rem 0;
+	display: flex;
+	justify-content: flex-start;
+	align-items: center;
+	gap: 0.5rem;
+}
+
+.range-box {
+	display: flex;
+	justify-content: flex-start;
+	align-items: center;
+}
+.range-box label {
+	font-variant-numeric: tabular-nums;
+	display: block;
+	width: 250px;
+}
+.range-box input[type='range'] {
+	display: block;
+}

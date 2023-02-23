@@ -1,27 +1,27 @@
 <script lang="ts">
-	import type { v2 } from '$lib/models';
+	import type { Vector2 } from '$lib/models';
 	import { tweenedSequence } from '$lib/tweenedSequence';
 	import { quintOut } from 'svelte/easing';
 
-	// TODO: Fix issue where interface like this throws error because 
+	// TODO: Fix issue where interface like this throws error because
 	// not indexed with [key: string] in NamedSequence.
 
 	// interface NamedPositionList {
-	// 	Step_One: v2;
-	// 	Step_Two: v2;
-	// 	Step_Three: v2;
-	// 	Step_Four: v2;
-	// 	Step_Five: v2;
+	// 	Step_One: Partial<Vector2>;
+	// 	Step_Two: Partial<Vector2>;
+	// 	Step_Three: Partial<Vector2>;
+	// 	Step_Four: Partial<Vector2>;
+	// 	Step_Five: Partial<Vector2>;
 	// }
 
 	// Temporary "solution" is to use type
 	type NamedPositionList = {
-		Step_One: v2;
-		Step_Two: v2;
-		Step_Three: v2;
-		Step_Four: v2;
-		Step_Five: v2;
-	}
+		Step_One: Partial<Vector2>;
+		Step_Two: Partial<Vector2>;
+		Step_Three: Partial<Vector2>;
+		Step_Four: Partial<Vector2>;
+		Step_Five: Partial<Vector2>;
+	};
 
 	const positionList: NamedPositionList = {
 		Step_One: { x: 0, y: 0 },
@@ -33,21 +33,24 @@
 
 	const buttons = Object.keys(positionList);
 
-	const positionSequence = tweenedSequence<v2>(positionList, {
+	const positionSequence = tweenedSequence<Partial<Vector2>>(positionList, {
 		duration: 1000,
 		easing: quintOut
 	});
+
+	const { step } = positionSequence;
 </script>
 
 <div class="wrapper">
 	<div class="dot" style:left="{$positionSequence['x']}px" style:top="{$positionSequence['y']}px" />
 </div>
-
-<button on:click={() => positionSequence.previousStep()}>Previous</button>
-{#each buttons as b}
-	<button on:click={() => positionSequence.setStep(b)}>{b}</button>
-{/each}
-<button on:click={() => positionSequence.nextStep()}>Next</button>
+<div class="control-box">
+	<button on:click={() => positionSequence.previousStep()}>Previous</button>
+	{#each buttons as b}
+		<button class:active={$step === b} on:click={() => positionSequence.setStep(b)}>{b}</button>
+	{/each}
+	<button on:click={() => positionSequence.nextStep()}>Next</button>
+</div>
 
 <style>
 	.wrapper {
