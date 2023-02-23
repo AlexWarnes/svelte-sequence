@@ -6,14 +6,18 @@
 </script>
 
 <section>
+	<h2>IndexedTestingNum</h2>
 	<IndexedTestingNum />
 </section>
 <section>
+	<h2>IndexedTestingArr</h2>
 	<IndexedTestingArr />
 </section>
 <section>
+	<h2>IndexedTestingObj</h2>
 	<IndexedTestingObj />
 </section>
 <section>
+	<h2>IndexedTestingUpdater</h2>
 	<IndexedTestingUpdater />
 </section>

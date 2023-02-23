@@ -1,3 +1,7 @@
+<script>
+  import './app.css';
+</script>
+
 <nav>
 	<a href="/named">Named</a>
 	<a href="/indexed">Indexed</a>
@@ -9,15 +13,6 @@
 </main>
 
 <style>
-  :global(body){
-    font-family: sans-serif;
-  }
-  :global(*){
-    box-sizing: border-box;
-  }
-  :global(section){
-    margin: 1rem auto;
-  }
   nav {
     display: flex;
     justify-content: space-evenly;

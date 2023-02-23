@@ -1,11 +1,10 @@
 <script lang="ts">
-	import type { TweenedSequence, v2 } from '$lib/models';
+	import type { TweenedSequence, Vector2 } from '$lib/models';
 	import { tweenedSequence } from '$lib/tweenedSequence';
 	import { elasticOut } from 'svelte/easing';
 	import { tweened } from 'svelte/motion';
 
-	let step = 0;
-	const positionList: v2[] = [
+	const positionList: Partial<Vector2>[] = [
 		{ x: 0, y: 0 },
 		{ x: 250, y: 10 },
 		{ x: 400, y: 125 },
@@ -13,33 +12,33 @@
 		{ x: 490, y: 490 }
 	];
 
-	$: positionSequence.setStep(step);
+	const buttons = positionList.map((_, idx) => idx);
 
 	//@ts-ignore
-	const positionSequence: TweenedSequence<v2> = tweenedSequence(positionList, {
+	// const positionSequence: TweenedSequence<Vector2> = tweenedSequence(positionList, {
+	// 	duration: 1000,
+	// 	easing: elasticOut
+	// });
+	const { value, step, setStep, previousStep, nextStep } = tweenedSequence(positionList, {
 		duration: 1000,
 		easing: elasticOut
 	});
 </script>
 
 <div class="wrapper">
-	<div class="dot" style:left="{$positionSequence['x']}px" style:top="{$positionSequence['y']}px" />
+	<div class="dot" style:left="{$value['x']}px" style:top="{$value['y']}px" />
 </div>
 
-<button on:click={() => positionSequence.previousStep()}>Previous</button>
-<button on:click={() => positionSequence.setStep(0)}>0</button>
-
-<button on:click={() => positionSequence.setStep(1)}>1</button>
-
-<button on:click={() => positionSequence.setStep(2)}>2</button>
-
-<button on:click={() => positionSequence.setStep(3)}>3</button>
-
-<button on:click={() => positionSequence.setStep(4)}>4</button>
-<button on:click={() => positionSequence.nextStep()}>Next</button>
+<div class="control-box">
+	<button on:click={() => previousStep()}>Previous</button>
+	{#each buttons as b}
+		<button class:active={$step === b} on:click={() => setStep(b)}>{b}</button>
+	{/each}
+	<button on:click={() => nextStep()}>Next</button>
+</div>
 <label
 	>Partial Step:
-	<input type="range" step="0.01" min="0" max={positionList.length - 1} bind:value={step} />
+	<input type="range" step="0.01" min="0" max={positionList.length - 1} bind:value={$step} />
 </label>
 
 <style>

@@ -3,31 +3,34 @@
 	import { tweenedSequence } from '$lib/tweenedSequence';
 	import { quintOut } from 'svelte/easing';
 
-	const positionList: [number, number][] = [
-		[0, 0],
-		[250, 10],
-		[400, 125],
-		[10, 325],
-		[490, 490]
-	];
+	const positionList: { [key: string]: [number, number] } = {
+		first: [0, 0],
+		second: [250, 10],
+		third: [400, 125],
+		fourth: [10, 325],
+		fifth: [490, 490]
+	};
 
-	const buttons = positionList.map((_, idx) => idx);
+	const buttons = Object.keys(positionList);
 
 	const positionSequence: TweenedSequence<[number, number]> = tweenedSequence(positionList, {
 		duration: 1000,
 		easing: quintOut
 	});
+	const { step } = positionSequence;
 </script>
 
 <div class="wrapper">
 	<div class="dot" style:left="{$positionSequence[0]}px" style:top="{$positionSequence[1]}px" />
 </div>
 
-<button on:click={() => positionSequence.previousStep()}>Previous</button>
-{#each buttons as b}
-	<button on:click={() => positionSequence.setStep(b)}>{b}</button>
-{/each}
-<button on:click={() => positionSequence.nextStep()}>Next</button>
+<div class="control-box">
+	<button on:click={() => positionSequence.previousStep()}>Previous</button>
+	{#each buttons as b}
+		<button class:active={$step === b} on:click={() => $step = b}>{b}</button>
+	{/each}
+	<button on:click={() => positionSequence.nextStep()}>Next</button>
+</div>
 
 <style>
 	.wrapper {

@@ -8,8 +8,11 @@ import type {
 	Sequence,
 	SequenceType,
 	TweenedSequence,
-	TweenedSequenceOptions
+	TweenedSequenceOptions,
+	Vector3
 } from './models';
+import { writable } from 'svelte/store';
+import { onDestroy } from 'svelte';
 
 function calculateNextValueFromFract<T>(a: T, b: T, factor: number): T {
 	if (typeof a === 'number' && typeof b === 'number') {
@@ -26,8 +29,19 @@ function calculateNextValueFromFract<T>(a: T, b: T, factor: number): T {
 		return temp as T;
 	}
 
+	// TODO: See if this even works to handle threejs vector3
+	// @ts-ignore
+	if (a.isVector3 && b.isVector3) {
+		// handle threejs vector3
+		const v3 = (a as Vector3).clone()
+		.setX((((b as Vector3)['x'] as number) - ((a as Vector3)['x'] as number)) * factor + ((a as Vector3)['x'] as number))
+		.setY((((b as Vector3)['y'] as number) - ((a as Vector3)['y'] as number)) * factor + ((a as Vector3)['y'] as number))
+		.setZ((((b as Vector3)['z'] as number) - ((a as Vector3)['z'] as number)) * factor + ((a as Vector3)['z'] as number))
+		return v3 as T;
+	}
+
 	if (!!a && !!b && typeof a === 'object' && typeof b === 'object') {
-		// handle objects (like Vector3)
+		// handle objects
 		const temp = {};
 		Object.keys(a).forEach((k) => {
 			// TODO
@@ -60,7 +74,9 @@ function createIndexedSequence<T>(
 		);
 	}
 
-	const { subscribe, set, update } = tweened<T>(sequence[initialStep], { duration, easing, delay });
+	const step = writable(initialStep);
+	const value = tweened<T>(sequence[initialStep], { duration, easing, delay });
+	const { subscribe, set, update } = value;
 	let previousStep: number = initialStep;
 
 	// lil fractional helper
@@ -97,33 +113,37 @@ function createIndexedSequence<T>(
 			nextFactor
 		);
 		previousStep = step;
-		set(nextVal, {
+		return set(nextVal, {
 			duration: nextDuration ?? duration,
 			delay: nextDelay ?? delay,
 			easing
 		});
 	};
 
+	const unsubscribe = step.subscribe(setStep);
+
+	onDestroy(unsubscribe);
+
 	return {
+		value,
+		step,
 		subscribe,
 		nextStep: () => {
 			const baseNext = Math.floor(previousStep + 1);
 			// For sequence array, if next idx is too high, use 0
 			const actualNext = baseNext > sequence.length - 1 ? 0 : baseNext;
-			previousStep = actualNext;
-			set(sequence[actualNext]);
+			return step.set(actualNext);
 		},
 		previousStep: () => {
 			const basePrev = Math.ceil(previousStep - 1);
 			// For sequence array, if next idx is too high, use 0
 			const actualPrev = basePrev < 0 ? sequence.length - 1 : basePrev;
-			previousStep = actualPrev;
-			set(sequence[actualPrev]);
+			return step.set(actualPrev);
 		},
-		setStep,
+		setStep: (s) => step.set(s as number),
 		updateSequence: (fn) => {
 			sequence = fn(sequence) as IndexedSequence<T>;
-			setStep(previousStep)
+			return setStep(previousStep);
 		}
 	};
 }
@@ -147,7 +167,9 @@ function createNamedSequence<T>(
 		);
 	}
 
-	const { subscribe, set, update } = tweened<T>(sequence[initialStep], { duration, easing, delay });
+	const step = writable(initialStep);
+	const value = tweened<T>(sequence[initialStep], { duration, easing, delay });
+	const { subscribe, set, update } = value;
 	let previousStep: string = initialStep;
 
 	function setStep(step: string | number) {
@@ -156,34 +178,38 @@ function createNamedSequence<T>(
 		}
 
 		previousStep = step;
-		set(sequence[step] ?? sequence[initialStep], {
+		return set(sequence[step] ?? sequence[initialStep], {
 			duration,
 			delay,
 			easing
 		});
 	}
+
+	const unsubscribe = step.subscribe(setStep);
+	onDestroy(unsubscribe);
+
 	return {
+		step,
+		value,
 		subscribe,
 		nextStep: () => {
 			const keys = Object.keys(sequence);
 			const currentIdx = keys.indexOf(previousStep);
 			const baseNextKeyIdx = currentIdx + 1;
 			const actualNext = keys[baseNextKeyIdx] ?? keys[0];
-			previousStep = actualNext;
-			set(sequence[actualNext]);
+			return step.set(actualNext);
 		},
 		previousStep: () => {
 			const keys = Object.keys(sequence);
 			const currentIdx = keys.indexOf(previousStep as string);
 			const basePrevKeyIdx = currentIdx - 1;
 			const actualPrev = keys[basePrevKeyIdx] ?? keys[keys.length - 1];
-			previousStep = actualPrev;
-			set(sequence[actualPrev]);
+			return step.set(actualPrev);
 		},
-		setStep,
+		setStep: (s) => step.set(s as string),
 		updateSequence: (fn) => {
 			sequence = fn(sequence) as NamedSequence<T>;
-			setStep(previousStep);
+			return setStep(previousStep);
 		}
 	};
 }
