@@ -4,6 +4,12 @@
 
 ### Patch Changes
 
+- 3da2d51: fix bad error message for invalid initialValue of indexed sequence
+
+## 0.3.1
+
+### Patch Changes
+
 - ad593c5: tweenedSequence returns value and step stores
 
 ## 0.3.0
