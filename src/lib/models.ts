@@ -41,8 +41,8 @@ export type Sequence<T> = NamedSequence<T> | IndexedSequence<T>;
 
 export interface TweenedSequence<T> extends Readable<T> {
 		setStep: (step: string | number) => void;
-		nextStep: () => void;
-		previousStep: () => void;
+		nextStep: (fn?: null | ((step: number | string) => void)) => void;
+		previousStep: (fn?: null | ((step: number | string) => void)) => void;
 		value: Tweened<T>,
 		step: Writable<string | number>;
 		// TODO: figure out how to type this update fn.

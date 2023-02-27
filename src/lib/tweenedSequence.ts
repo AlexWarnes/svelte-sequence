@@ -66,7 +66,7 @@ function createIndexedSequence<T>(
 	const initialStep = (options.initialStep as number) ?? 0;
 
 	// Validate initial step
-	if (sequence[initialStep] === null || sequence[initialStep] === undefined) {
+	if (initialStep < 0 || initialStep > sequence.length) {
 		console.error(
 			`Step "${initialStep}" is an invalid initialStep for your sequence of length ${
 				sequence.length
@@ -128,17 +128,19 @@ function createIndexedSequence<T>(
 		value,
 		step,
 		subscribe,
-		nextStep: () => {
+		nextStep: (fn = null) => {
 			const baseNext = Math.floor(previousStep + 1);
 			// For sequence array, if next idx is too high, use 0
 			const actualNext = baseNext > sequence.length - 1 ? 0 : baseNext;
-			return step.set(actualNext);
+			step.set(actualNext);
+			if (fn) fn(actualNext)
 		},
-		previousStep: () => {
+		previousStep: (fn = null) => {
 			const basePrev = Math.ceil(previousStep - 1);
 			// For sequence array, if next idx is too high, use 0
 			const actualPrev = basePrev < 0 ? sequence.length - 1 : basePrev;
-			return step.set(actualPrev);
+			step.set(actualPrev);
+			if (fn) fn(actualPrev)
 		},
 		setStep: (s) => step.set(s as number),
 		updateSequence: (fn) => {
@@ -192,19 +194,21 @@ function createNamedSequence<T>(
 		step,
 		value,
 		subscribe,
-		nextStep: () => {
+		nextStep: (fn = null) => {
 			const keys = Object.keys(sequence);
 			const currentIdx = keys.indexOf(previousStep);
 			const baseNextKeyIdx = currentIdx + 1;
 			const actualNext = keys[baseNextKeyIdx] ?? keys[0];
-			return step.set(actualNext);
+			step.set(actualNext);
+			if (fn) fn(actualNext)
 		},
-		previousStep: () => {
+		previousStep: (fn = null) => {
 			const keys = Object.keys(sequence);
 			const currentIdx = keys.indexOf(previousStep as string);
 			const basePrevKeyIdx = currentIdx - 1;
 			const actualPrev = keys[basePrevKeyIdx] ?? keys[keys.length - 1];
-			return step.set(actualPrev);
+			step.set(actualPrev);
+			if (fn) fn(actualPrev)
 		},
 		setStep: (s) => step.set(s as string),
 		updateSequence: (fn) => {
