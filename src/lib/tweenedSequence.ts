@@ -66,7 +66,7 @@ function createIndexedSequence<T>(
 	const initialStep = (options.initialStep as number) ?? 0;
 
 	// Validate initial step
-	if (sequence[initialStep] === null || sequence[initialStep] === undefined) {
+	if (initialStep < 0 || initialStep > sequence.length) {
 		console.error(
 			`Step "${initialStep}" is an invalid initialStep for your sequence of length ${
 				sequence.length
