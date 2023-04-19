@@ -40,9 +40,9 @@ export type Sequence<T> = NamedSequence<T> | IndexedSequence<T>;
 // type Updater<T> = (target_value: T) => T;
 
 export interface TweenedSequence<T> extends Readable<T> {
-		setStep: (step: string | number) => void;
-		nextStep: () => void;
-		previousStep: () => void;
+		setStep: (step: string | number, options?: TweenedSequenceOptions) => void;
+		nextStep: (options?: TweenedSequenceOptions) => void;
+		previousStep: (options?: TweenedSequenceOptions) => void;
 		value: Tweened<T>,
 		step: Writable<string | number>;
 		// TODO: figure out how to type this update fn.
@@ -54,7 +54,7 @@ export interface TweenedSequence<T> extends Readable<T> {
 		 * NOTE: the new sequence must be the same "shape" as the original sequence.
 		 * 
 		 */
-		updateSequence: (fn: (currentSequence: any) => any) => void;
+		updateSequence: (fn: (currentSequence: any) => any, options?: TweenedSequenceOptions) => void;
 		// updateSequence: (updater: (s: Sequence<T>) => Sequence<T>) => void
 
 }

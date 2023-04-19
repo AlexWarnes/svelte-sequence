@@ -14,6 +14,12 @@ import type {
 import { writable } from 'svelte/store';
 import { onDestroy } from 'svelte';
 
+const defaultOptions: TweenedSequenceOptions = {
+	duration: 1000,
+	easing: linear,
+	delay: 0
+};
+
 function calculateNextValueFromFract<T>(a: T, b: T, factor: number): T {
 	if (typeof a === 'number' && typeof b === 'number') {
 		// handle numbers
@@ -33,10 +39,20 @@ function calculateNextValueFromFract<T>(a: T, b: T, factor: number): T {
 	// @ts-ignore
 	if (a.isVector3 && b.isVector3) {
 		// handle threejs vector3
-		const v3 = (a as Vector3).clone()
-		.setX((((b as Vector3)['x'] as number) - ((a as Vector3)['x'] as number)) * factor + ((a as Vector3)['x'] as number))
-		.setY((((b as Vector3)['y'] as number) - ((a as Vector3)['y'] as number)) * factor + ((a as Vector3)['y'] as number))
-		.setZ((((b as Vector3)['z'] as number) - ((a as Vector3)['z'] as number)) * factor + ((a as Vector3)['z'] as number))
+		const v3 = (a as Vector3)
+			.clone()
+			.setX(
+				(((b as Vector3)['x'] as number) - ((a as Vector3)['x'] as number)) * factor +
+					((a as Vector3)['x'] as number)
+			)
+			.setY(
+				(((b as Vector3)['y'] as number) - ((a as Vector3)['y'] as number)) * factor +
+					((a as Vector3)['y'] as number)
+			)
+			.setZ(
+				(((b as Vector3)['z'] as number) - ((a as Vector3)['z'] as number)) * factor +
+					((a as Vector3)['z'] as number)
+			);
 		return v3 as T;
 	}
 
@@ -54,16 +70,27 @@ function calculateNextValueFromFract<T>(a: T, b: T, factor: number): T {
 	return b;
 }
 
+function updateOptions(
+	currentOptions: TweenedSequenceOptions,
+	newOptions: TweenedSequenceOptions | undefined
+): TweenedSequenceOptions {
+	if (!newOptions) return currentOptions;
+
+	let duration = newOptions.duration ?? currentOptions.duration;
+	let easing = newOptions.easing ?? currentOptions.easing;
+	let delay = newOptions.delay ?? currentOptions.delay;
+	let initialStep = newOptions.initialStep ?? currentOptions.initialStep;
+	return { duration, easing, delay, initialStep };
+}
+
 function createIndexedSequence<T>(
 	_sequence: IndexedSequence<T>,
 	options: TweenedSequenceOptions
 ): TweenedSequence<T> {
 	let sequence = _sequence;
 	const seqType: SequenceType = 'INDEXED';
-	const duration = options.duration ?? 1000;
-	const easing = options.easing ?? linear;
-	const delay = options.delay ?? 0;
-	const initialStep = (options.initialStep as number) ?? 0;
+	let { duration, delay, easing, initialStep: _iStep } = updateOptions(defaultOptions, options);
+	let initialStep = (_iStep as number) ?? 0;
 
 	// Validate initial step
 	if (initialStep < 0 || initialStep > sequence.length) {
@@ -72,6 +99,14 @@ function createIndexedSequence<T>(
 				sequence.length
 			}. A valid step satisfies: 0 <= step <= ${sequence.length - 1}`
 		);
+	}
+
+	function syncOptions(newOptions: TweenedSequenceOptions | undefined) {
+		const updatedOptions = updateOptions({ duration, easing, delay, initialStep }, newOptions);
+		duration = updatedOptions.duration;
+		easing = updatedOptions.easing;
+		delay = updatedOptions.delay;
+		initialStep = updatedOptions.initialStep as number;
 	}
 
 	const step = writable(initialStep);
@@ -101,12 +136,12 @@ function createIndexedSequence<T>(
 		let partial = fract(step);
 		const previousValue: T = sequence[Math.floor(step)] ?? sequence[0];
 		const nextValue: T = sequence[Math.ceil(step)] ?? sequence[1];
-		const nextFactor = easing(partial);
+		const nextFactor = easing!(partial);
 		const stepDiff = Math.abs(previousStep - step);
-		nextDuration = stepDiff * duration < duration ? stepDiff * duration : duration;
+		nextDuration = stepDiff * duration! < duration! ? stepDiff * duration! : duration;
 		// TODO: consider delay behavior (when to apply, when not to)
 		// maybe as arg to setStep so user can decide?
-		nextDelay = stepDiff * delay < delay ? stepDiff * delay : delay;
+		nextDelay = stepDiff * delay! < delay! ? stepDiff * delay! : delay;
 		const nextVal: T = calculateNextValueFromFract<T>(
 			previousValue, // from
 			nextValue, // to
@@ -128,35 +163,40 @@ function createIndexedSequence<T>(
 		value,
 		step,
 		subscribe,
-		nextStep: () => {
+		nextStep: (newOptions) => {
 			const baseNext = Math.floor(previousStep + 1);
 			// For sequence array, if next idx is too high, use 0
 			const actualNext = baseNext > sequence.length - 1 ? 0 : baseNext;
+			syncOptions(newOptions);
 			return step.set(actualNext);
 		},
-		previousStep: () => {
+		previousStep: (newOptions) => {
 			const basePrev = Math.ceil(previousStep - 1);
 			// For sequence array, if next idx is too high, use 0
 			const actualPrev = basePrev < 0 ? sequence.length - 1 : basePrev;
+			syncOptions(newOptions);
 			return step.set(actualPrev);
 		},
-		setStep: (s) => step.set(s as number),
-		updateSequence: (fn) => {
+		setStep: (s, newOptions) => {
+			syncOptions(newOptions);
+			step.set(s as number);
+		},
+		updateSequence: (fn, newOptions) => {
 			sequence = fn(sequence) as IndexedSequence<T>;
+			syncOptions(newOptions);
 			return setStep(previousStep);
 		}
 	};
 }
+
 function createNamedSequence<T>(
 	_sequence: NamedSequence<T>,
 	options: TweenedSequenceOptions
 ): TweenedSequence<T> {
 	let sequence = _sequence;
 	const seqType: SequenceType = 'NAMED';
-	const duration = options.duration ?? 1000;
-	const easing = options.easing ?? linear;
-	const delay = options.delay ?? 0;
-	const initialStep = (options.initialStep as string) ?? Object.keys(sequence)[0];
+	let { duration, delay, easing, initialStep: _iStep } = updateOptions(defaultOptions, options);
+	let initialStep = (_iStep as string) ?? Object.keys(sequence)[0];
 
 	// Validate initial step
 	if (sequence[initialStep] === null || sequence[initialStep] === undefined) {
@@ -165,6 +205,14 @@ function createNamedSequence<T>(
 				sequence
 			).join(', ')}`
 		);
+	}
+
+	function syncOptions(newOptions: TweenedSequenceOptions | undefined) {
+		const updatedOptions = updateOptions({ duration, easing, delay, initialStep }, newOptions);
+		duration = updatedOptions.duration;
+		easing = updatedOptions.easing;
+		delay = updatedOptions.delay;
+		initialStep = updatedOptions.initialStep as string;
 	}
 
 	const step = writable(initialStep);
@@ -192,23 +240,29 @@ function createNamedSequence<T>(
 		step,
 		value,
 		subscribe,
-		nextStep: () => {
+		nextStep: (newOptions) => {
 			const keys = Object.keys(sequence);
 			const currentIdx = keys.indexOf(previousStep);
 			const baseNextKeyIdx = currentIdx + 1;
 			const actualNext = keys[baseNextKeyIdx] ?? keys[0];
+			syncOptions(newOptions);
 			return step.set(actualNext);
 		},
-		previousStep: () => {
+		previousStep: (newOptions) => {
 			const keys = Object.keys(sequence);
 			const currentIdx = keys.indexOf(previousStep as string);
 			const basePrevKeyIdx = currentIdx - 1;
 			const actualPrev = keys[basePrevKeyIdx] ?? keys[keys.length - 1];
+			syncOptions(newOptions);
 			return step.set(actualPrev);
 		},
-		setStep: (s) => step.set(s as string),
-		updateSequence: (fn) => {
+		setStep: (s, newOptions) => {
+			syncOptions(newOptions);
+			step.set(s as string);
+		},
+		updateSequence: (fn, newOptions) => {
 			sequence = fn(sequence) as NamedSequence<T>;
+			syncOptions(newOptions);
 			return setStep(previousStep);
 		}
 	};
