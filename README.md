@@ -15,10 +15,10 @@ Example on StackBlitz: https://stackblitz.com/edit/example-svelte-sequence
 
 **Methods:**
 
-- `setStep(step)`
-- `updateSequence((currentSequence) => newSequence)`
-- `nextStep()`
-- `previousStep()`
+- `setStep(step, options?)`
+- `updateSequence((currentSequence) => newSequence, options?)`
+- `nextStep(options?)`
+- `previousStep(options?)`
 
 **Stores:**
 - `value: Tweened<T>`
@@ -165,6 +165,21 @@ function handleClick(event) {
 
 And voila! Your sequence is updated and your call to `setStep(2)` will tween to your new tuple position. This works for any sequence type or value type, as long as the returned sequence is the same shape as the original.
 
+## **Dynamic Options**
+
+Also similar to a tweened sotre, you can update your options (like delay, easing, or duration) with an optional second argument to any of your `setStep`, `previousStep`, `nextStep`, or `updateSequence` calls.
+
+For example:
+```js
+function elasticNext(){
+	mySequence.nextStep({ easing: elasticOut, duration: 3000 });
+}
+
+function cubicPrevious(){
+	mySequence.previousStep({ easing: cubicInOut, duration: 800 });
+}
+
+```
 # stopwatch
 
 A stopwatch store that emits time elapsed in ms.
@@ -290,11 +305,11 @@ function formatTime(t: number, includeZero: boolean = false) {
 interface TweenedSequence<T> extends Readable<T> {
 	value: Tweened<T>,
 	step: Writable<string | number>;
-	setStep: (step: string | number) => void;
-	nextStep: () => void;
-	previousStep: () => void;
+	setStep: (step: string | number, options?: TweenedSequenceOptions) => void;
+	nextStep: (options?: TweenedSequenceOptions) => void;
+	previousStep: (options?: TweenedSequenceOptions) => void;
 	// PRs welcome :D
-	updateSequence: (fn: (currentSequence: any) => any) => void;
+	updateSequence: (fn: (currentSequence: any) => any, options?: TweenedSequenceOptions) => void;
 }
 
 interface TweenedSequenceOptions {
