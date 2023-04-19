@@ -4,7 +4,7 @@
 	"license": "MIT",
 	"scripts": {
 		"dev": "vite dev",
-		"build": "svelte-kit sync && svelte-package && node copy_packageJSON_to_dist.js",
+		"build": "svelte-kit sync && svelte-package",
 		"build-docs": "vite build",
 		"release": "changeset publish",
 		"prepublishOnly": "echo 'Did you mean to publish `./dist/`, instead of `./`?' && exit 1",
@@ -30,9 +30,6 @@
 		"vite": "^4.2.2"
 	},
 	"type": "module",
-	"publishConfig": {
-		"directory": "./dist"
-	},
 	"exports": {
 		".": {
 			"types": "./dist/index.d.ts",
