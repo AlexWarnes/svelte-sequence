@@ -28,5 +28,37 @@
 	"publishConfig": {
 		"directory": "./dist"
 	},
-	"type": "module"
+	"type": "module",
+	"exports": {
+		"./package.json": "./package.json",
+		".": {
+			"types": "./package/index.d.ts",
+			"svelte": "./package/index.js",
+			"default": "./package/index.js"
+		},
+		"./models": {
+			"types": "./package/models.d.ts",
+			"default": "./package/models.js"
+		},
+		"./stopwatch": {
+			"types": "./package/stopwatch.d.ts",
+			"default": "./package/stopwatch.js"
+		},
+		"./timeUtils": {
+			"types": "./package/timeUtils.d.ts",
+			"default": "./package/timeUtils.js"
+		},
+		"./timer": {
+			"types": "./package/timer.d.ts",
+			"default": "./package/timer.js"
+		},
+		"./tweenedSequence": {
+			"types": "./package/tweenedSequence.d.ts",
+			"default": "./package/tweenedSequence.js"
+		}
+	},
+	"files": [
+		"package"
+	],
+	"svelte": "./package/index.js"
 }
