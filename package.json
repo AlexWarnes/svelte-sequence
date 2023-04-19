@@ -7,38 +7,27 @@
 		"build": "svelte-kit sync && svelte-package",
 		"build-docs": "vite build",
 		"release": "changeset publish",
-		"prepublishOnly": "echo 'Did you mean to publish `./dist/`, instead of `./`?' && exit 1",
+		"prepublishOnly": "echo 'Did you mean to publish `./package/`, instead of `./`?' && exit 1",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"lint": "prettier --plugin-search-dir . --check .",
 		"format": "prettier --plugin-search-dir . --write ."
 	},
-	"peerDependencies": {
-		"svelte": "~3.0"
-	},
 	"devDependencies": {
 		"@changesets/cli": "^2.26.1",
 		"@sveltejs/adapter-auto": "^2.0.0",
 		"@sveltejs/kit": "^1.15.7",
-		"@sveltejs/package": "^2.0.2",
+		"@sveltejs/package": "^1.0.2",
 		"prettier": "^2.8.7",
 		"prettier-plugin-svelte": "^2.10.0",
 		"svelte": "^3.58.0",
 		"svelte-check": "^3.2.0",
 		"tslib": "^2.5.0",
-		"typescript": "^5.0.4",
+		"typescript": "^4.9.5",
 		"vite": "^4.2.2"
 	},
-	"type": "module",
-	"exports": {
-		".": {
-			"types": "./dist/index.d.ts",
-			"svelte": "./dist/index.js",
-			"default": "./dist/index.js"
-		}
+	"publishConfig": {
+		"directory": "./package"
 	},
-	"files": [
-		"dist"
-	],
-	"svelte": "./dist/index.js"
+	"type": "module"
 }
