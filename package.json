@@ -29,6 +29,9 @@
 		"vite": "^4.2.2"
 	},
 	"type": "module",
+	"publishConfig": {
+		"directory": "./dist"
+	},
 	"exports": {
 		"./package.json": "./package.json",
 		".": {
